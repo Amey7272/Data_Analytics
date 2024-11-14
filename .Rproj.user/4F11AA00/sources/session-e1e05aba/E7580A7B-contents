@@ -1,0 +1,142 @@
+library(ProjectTemplate)
+
+load.project()
+
+
+############# Enrollments for Gender
+
+cleaned_cyber_security_2_enrolments <- cyber_security_2_enrolments |>
+  filter(gender !="Unknown" & age_range != "Unknown" & employment_status != "Unknown" & detected_country != "--") |> mutate(new_enrolled_at = as.Date(enrolled_at),.before=enrolled_at) |> mutate(new_unenrolled_at = as.Date(unenrolled_at),.before=unenrolled_at) |>  select(-country)
+
+View(cleaned_cyber_security_2_enrolments)
+
+gender_cyber_security2 <- cleaned_cyber_security_2_enrolments |> count(gender) |> arrange(desc(n)) 
+gender_cyber_security2
+
+
+############  Count occurrences by gender, age range, and country
+
+
+# Plot the bar chart
+ggplot(countrydata, aes(x = detected_country, y = age_range, fill = gender)) +
+  geom_bar(stat = "identity", position = "fill") +  # "fill" scales bars to 100%
+  facet_wrap(~ countrydata) +
+  labs(
+    title = "Gender Distribution by Age Range and Country (Proportion)",
+    x = "detected_country",
+    y = "age_range",
+    fill = "Gender"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+####################### Archetypes for run_cycle_3
+
+arche_data_3 <- cyber_security_3_archetype_survey_responses |>
+  select(archetype) |> mutate(run_cycle = "run3", .before=archetype)
+View(arche_data_3)
+
+arch_data_3 <- cyber_security_3_archetype_survey_responses |> count(archetype)|>arrange(desc(n))
+arch_data_3
+
+ggplot(arche_data_3, aes(x = run_cycle, fill = archetype)) +
+  geom_bar(position = "dodge") +
+  geom_text(stat = "count", 
+            aes(label = after_stat(count)),
+            position = position_dodge(width = 0.9),
+            vjust = -0.5) +
+  labs(
+    title = "Arche_type Distribution Across Run Cycles",
+    x = "Run Cycle",
+    y = "Count",
+    fill = "Archetype"
+  ) +
+  theme_minimal()
+
+##################### Archetypes for run_cycle_5
+
+arche_data_7 <- cyber_security_7_archetype_survey_responses |>
+  select(archetype) |> mutate(run_cycle = "run7", .before=archetype)
+View(arche_data_7)
+
+arch_data_7 <- cyber_security_7_archetype_survey_responses |> count(archetype)|>arrange(desc(n))
+arch_data_7
+
+ggplot(arche_data_7, aes(x = run_cycle, fill = archetype)) +
+  geom_bar(position = "dodge") +
+  geom_text(stat = "count", 
+            aes(label = after_stat(count)),
+            position = position_dodge(width = 0.9),
+            vjust = -0.5) +
+  labs(
+    title = "Arche_type Distribution Across Run Cycles",
+    x = "Run Cycle",
+    y = "Count",
+    fill = "Archetype"
+  ) +
+  theme_minimal()
+
+
+#########
+
+############# Enrollments for Gender
+
+CS_enrolments_data_3 <- cyber_security_3_enrolments |>
+  select(learner_id, enrolled_at, fully_participated_at, purchased_statement_at, gender, age_range, highest_education_level,employment_status, employment_area, detected_country)|> mutate(run_cycle = "run3", .before=learner_id)
+View(CS_enrolments_data_3) 
+ 
+CS_enrolments_data_7 <- cyber_security_7_enrolments |>
+  select(learner_id, enrolled_at, fully_participated_at, purchased_statement_at, gender, age_range, highest_education_level,employment_status, employment_area, detected_country)|> mutate(run_cycle = "run7", .before=learner_id)
+View(CS_enrolments_data_7)
+
+CS_enrollments_data <- bind_rows(CS_enrolments_data_3, CS_enrolments_data_7)
+View(CS_enrollments_data )
+
+
+gendersummary <- CS_enrollments_data |> count(gender) |> arrange(desc(n)) 
+gendersummary
+
+employmentsummary <- CS_enrollments_data |> count(employment_status) |> arrange(desc(n)) 
+employmentsummary
+
+countrysummary <- CS_enrollments_data |> count(detected_country) |> arrange(desc(n)) 
+
+head(countrysummary,5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#####Archaeological Summary####
+
+arch_summary <- Master_2|> count(arche_type)|>arrange(desc(n))
+arch_summary
+
+ggplot(Master_2, aes(x = run_cycle, fill = arche_type)) +
+  geom_bar(position = "dodge") +
+  geom_text(stat = "count", 
+            aes(label = after_stat(count)),
+            position = position_dodge(width = 0.9),
+            vjust = -0.5) +
+  labs(
+    title = "Arche_type Distribution Across Run Cycles",
+    x = "Run Cycle",
+    y = "Count",
+    fill = "Arche_type"
+  ) +
+  theme_minimal()
+
+

@@ -1,0 +1,18 @@
+---
+title: "Data Analysis Report"
+author: "Amey Hari Madane"
+date: "2024-11-14"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath('...'))
+```
+
+```{r}
+library(ProjectTemplate)
+load.project()
+
+```
+

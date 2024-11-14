@@ -1,0 +1,330 @@
+install.packages("ggpubr")
+install.packages("ProjectTemplate")
+install.packages("dplyr")
+install.packages("ggplot2")
+install.packages("GGally")
+
+library(ggpubr)
+library(ProjectTemplate)
+library(dplyr)
+library(ggplot2)
+library(GGally)
+library(tidyr)
+library(readxl)
+
+# Calculate average view percentages by continent
+continent_distribution <- cyber_security_7_video_stats |>
+  select(europe_views_percentage, oceania_views_percentage, asia_views_percentage, north_america_views_percentage, south_america_views_percentage, africa_views_percentage, antarctica_views_percentage) |>
+  mutate(run_cycle = "run7", .before=europe_views_percentage)
+View(continent_distribution)
+
+# Calculate average views percentage for each continent
+continent_avg <- continent_distribution %>%
+  select(-run_cycle) %>%
+  summarise(across(everything(), mean, na.rm = TRUE)) %>%
+  pivot_longer(cols = everything(), names_to = "continent", values_to = "average_views_percentage")
+
+# Plot with percentage labels
+ggplot(continent_avg, aes(x = reorder(continent, -average_views_percentage), y = average_views_percentage, fill = continent)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = paste0(round(average_views_percentage, 2), "%")), 
+            vjust = -0.3, color = "black", size = 4) +
+  labs(
+    title = "Average Views Percentage by Continent",
+    x = "Continent",
+    y = "Average Views Percentage"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+################## Correlation between video duration and total views 
+
+# Create the data frame
+Views_data <- cyber_security_7_video_stats |>
+     select(video_duration,total_views) |> mutate(run_cycle = "run7", .before=video_duration)
+  View(Views_data) 
+ 
+  correlation <- cor(Views_data$video_duration, Views_data$total_views, use = "complete.obs", method = "pearson")
+  print(correlation)
+  
+  # Create the line plot
+  ggplot(Views_data, aes(x = video_duration, y = total_views)) +
+    geom_line() +
+    geom_point() +
+    stat_smooth(method = "lm", se = FALSE) +
+    labs(
+      title = "Correlation Between Video Duration and Total Views",
+      x = "Video Duration",
+      y = "Total Views"
+    ) +
+    theme_minimal()
+
+  
+  ############## To find patterns in video viewership of learner’s at various steps
+  
+  patterns_7 <- cyber_security_7_video_stats |> 
+    select(step_position, viewed_five_percent, viewed_ten_percent, viewed_twentyfive_percent, viewed_fifty_percent, viewed_seventyfive_percent, viewed_ninetyfive_percent, viewed_onehundred_percent) 
+  View(patterns_7) 
+  
+  # Convert step_position to a factor to ensure all labels appear in the plot
+  patterns_7$step_position <- as.factor(patterns_7$step_position)
+  
+  
+  # Reshape data to long format for plotting
+  patterns_long <- patterns_7 %>%
+    pivot_longer(
+      cols = -step_position,
+      names_to = "variable",
+      values_to = "viewer_percentage"
+    )
+  
+  # Plot the parallel coordinates plot
+  ggparcoord(
+    data = patterns_7,
+    columns = 2:8,              # Columns for parallel coordinates (view percentages)
+    groupColumn = 1,            # Column for grouping (step_position)
+    scale = "globalminmax",      # Use original data scale for y-axis
+    alphaLines = 0.7,           # Transparency for lines
+    showPoints = TRUE           # Show points on lines
+  ) +
+    labs(
+      title = "Video Viewership of learners at Different Steps",
+      x = "Variable",
+      y = "Value"
+    ) +
+    theme_minimal() +
+    scale_y_continuous(
+      limits = c(30, 85),       # Set y-axis limits to match data range
+      breaks = seq(30, 85, by = 10)  # Define breaks on y-axis
+    )
+  #####################
+  # Convert step_position to a factor to ensure all labels appear in the plot
+  patterns_7$step_position <- as.factor(patterns_7$step_position)
+  
+  # Reshape the data to long format
+  patterns_long <- patterns_7 %>%
+    pivot_longer(
+      cols = -step_position,
+  names_to = "variable",
+  values_to = "viewer_percentage"
+  )
+  
+  # Create a parallel coordinate plot
+  ggparcoord(
+    data = patterns_7,
+    columns = 2:8,               # Columns for parallel coordinates (view percentages)
+    groupColumn = 1,             # Column for grouping (step_position)
+    scale = "uniminmax",         # Scale each variable between 0 and 1
+    alphaLines = 0.7,            # Transparency for lines
+    showPoints = TRUE,           # Show points on lines
+  ) +
+    labs(
+      title = "Video Viewership at Different Steps",
+      x = "Variable",
+      y = "Value"
+    ) +
+    theme_minimal()
+  scale_y_continuous(
+    limits = c(30, 85),
+    breaks = seq(30, 85, by = 10)
+  )
+  
+########################## Combined the 2 sheets of cyber_security_7_enrollments & cyber_security_7_leaving_survey_response  from Run 7 
+  
+  
+      # Rename based on the actual column names
+      cyber_security_7_enrolments <- cyber_security_7_enrolments |>
+        rename(learner_id_enrolments = learner_id_enrolments)  # Replace 'student_id' with the actual name
+      
+      cyber_security_7_leaving_survey_responses <- cyber_security_7_leaving_survey_responses %>%
+        rename(learner_id_responses = learner_id_responses)  # Replace 'id' with the actual name
+      
+      # Perform the left join
+      master_data <- cyber_security_7_enrolments |>
+        left_join(cyber_security_7_leaving_survey_responses, by = c("learner_id_enrolments" = "learner_id_responses"))
+      view(master_data)
+      # Check the result
+      head(master_data)
+      
+      ###### Filter Master_data
+      
+      cleaned_master_data <- master_data |>
+        filter( gender !="Unknown" & age_range != "Unknown" & employment_status != "Unknown" & highest_education_level != "Unknown" & employment_status != "Unknown" & employment_area != "Unknown"& last_completed_step != "NA" )
+      
+      View(  cleaned_master_data)
+      
+      
+    ####################### Correlation of Age_range and Last_completed_step from Run cycle 7
+      
+      
+      # Create the data frame
+      Age_data7 <-   cleaned_master_data |>
+        select(age_range,last_completed_step) 
+      View(Age_data7) 
+      
+      correlation <- cor(Age_data7$age_range, Age_data7$last_completed_step)
+      print(correlation)
+      
+      # Convert age_range to numeric by extracting the lower bound of each range
+      Age_data7$age_range_numeric <- as.numeric(gsub("[^0-9]", "", Age_data7$age_range))
+      
+      # Check the conversion
+      head(Age_data7$age_range_numeric)
+      
+      # Now calculate the correlation
+      correlation <- cor(Age_data7$age_range_numeric, Age_data7$last_completed_step)
+      
+      print(correlation)
+      
+      
+  #################################################### Combined the 2 sheets of cyber_security_4_enrollments & cyber_security_4_leaving_survey_response  from Run 4
+      
+      
+      # Rename based on the actual column names
+      cyber_security_4_enrolments <- cyber_security_4_enrolments |>
+        rename(learner_id_enrolments = learner_id_enrolments)  # Replace 'student_id' with the actual name
+      
+      cyber_security_4_leaving_survey_responses <- cyber_security_4_leaving_survey_responses %>%
+        rename(learner_id_responses = learner_id_responses)  # Replace 'id' with the actual name
+      
+      # Perform the left join
+      master_data1 <- cyber_security_4_enrolments |>
+        left_join(cyber_security_4_leaving_survey_responses, by = c("learner_id_enrolments" = "learner_id_responses"))
+      view(master_data1)
+      # Check the result
+      head(master_data1)
+      
+      ############# Filter Master_data1 ##############
+      
+      cleaned_master_data1 <- master_data1 |>
+        filter( gender !="Unknown" & age_range != "Unknown" & employment_status != "Unknown" & highest_education_level != "Unknown" & employment_status != "Unknown" & employment_area != "Unknown"& last_completed_step != "NA" )
+      
+      View(  cleaned_master_data1)
+      
+      
+  #######################################Combined the 2 sheets of cyber_security_5_enrollments & cyber_security_5_leaving_survey_response  from Run 5
+      
+      # Rename based on the actual column names
+      cyber_security_5_enrolments <- cyber_security_5_enrolments |>
+        rename(learner_id_enrolments = learner_id)  # Replace 'student_id' with the actual name
+      
+      cyber_security_5_leaving_survey_responses <- cyber_security_5_leaving_survey_responses %>%
+        rename(learner_id_responses = learner_id)  # Replace 'id' with the actual name
+      
+      # Perform the left join
+      master_data2 <- cyber_security_5_enrolments |>
+        left_join(cyber_security_5_leaving_survey_responses, by = c("learner_id_enrolments" = "learner_id_responses"))
+      view(master_data2)
+      # Check the result
+      head(master_data2)
+      
+      ################### Filter Master_data2 ###############
+      
+      cleaned_master_data2 <- master_data2 |>
+        filter( gender !="Unknown" & age_range != "Unknown" & employment_status != "Unknown" & highest_education_level != "Unknown" & employment_status != "Unknown" & employment_area != "Unknown"& last_completed_step != "NA" )
+      
+      View(  cleaned_master_data2)
+      
+      ########################## Correlation of Age_range and Last_completed_step from Run cycle 7
+      
+      
+      # Create the data frame
+      Age_data5 <- cleaned_master_data2 |>
+        select(age_range, last_completed_step) 
+      
+      # View the data
+      View(Age_data5)
+      
+      #Convert age_range to numeric by extracting the lower bound of each range
+      Age_data5$age_range_numeric <- as.numeric(gsub("[^0-9]", "", Age_data5$age_range))
+      
+      # Check the conversion
+      head(Age_data5$age_range_numeric)
+      
+      # Now calculate the correlation using the numeric version of age_range
+      correlation <- cor(Age_data5$age_range_numeric, Age_data5$last_completed_step, use = "complete.obs")
+      
+      # Print the correlation
+      print(correlation)
+      
+      ############################ Combined the 2 sheets of cyber_security_5_enrollments & cyber_security_5_leaving_survey_response  from Run 5
+      
+      # Rename based on the actual column names
+      cyber_security_6_enrolments <- cyber_security_6_enrolments |>
+        rename(learner_id_enrolments = learner_id)  # Replace 'student_id' with the actual name
+      
+      cyber_security_6_leaving_survey_responses <- cyber_security_6_leaving_survey_responses %>%
+        rename(learner_id_responses = learner_id)  # Replace 'id' with the actual name
+      
+      # Perform the left join
+      master_data3 <- cyber_security_6_enrolments |>
+        left_join(cyber_security_6_leaving_survey_responses, by = c("learner_id_enrolments" = "learner_id_responses"))
+      view(master_data3)
+      # Check the result
+      head(master_data3)
+      
+      ################# Filter Master_data3 ##############
+      
+      cleaned_master_data3 <- master_data3 |>
+        filter( gender !="Unknown" & age_range != "Unknown" & employment_status != "Unknown" & highest_education_level != "Unknown" & employment_status != "Unknown" & employment_area != "Unknown"& last_completed_step != "NA" )
+      
+      View(  cleaned_master_data3)
+      
+  ############################# Combining RUN 4, RUN 5, RUN 6, RUN 7
+      
+      master_data_all <- bind_rows(
+        cleaned_master_data,
+        cleaned_master_data1,
+        cleaned_master_data2,
+        cleaned_master_data3
+      )
+      
+      # View the combined master data
+      View(master_data_all)
+      
+      # Check the first few rows to confirm
+      head(master_data_all)
+      
+      
+      ################### Correlation for master data all
+      
+      # Convert `age_range` to numeric by extracting the lower bound of each range
+      master_data_all$age_range_numeric <- as.numeric(gsub("[^0-9]", "", master_data_all$age_range))
+      
+      # Ensure `last_completed_step` is numeric (if it's not already)
+      master_data_all$last_completed_step <- as.numeric(master_data_all$last_completed_step)
+      
+      # Calculate the correlation, excluding any missing values
+      correlation <- cor(master_data_all$age_range_numeric, master_data_all$last_completed_step, use = "complete.obs")
+      
+      # Print the correlation result
+      print(correlation)
+      
+     ############# Plot a graph 
+      
+      
+      # Convert age_range to numeric by extracting the lower bound for plotting purposes
+      master_data_all <- master_data_all %>%
+        mutate(age_range_numeric = as.numeric(gsub("[^0-9]", "", age_range)))
+      
+      # Bar plot of last_completed_step by age_range
+      ggplot(master_data_all, aes(x = age_range, fill = as.factor(last_completed_step))) +
+        geom_bar() +
+        labs(
+          title = "Distribution of Last Completed Step by Age Range",
+          x = "Age Range",
+          y = "Count",
+          fill = "Last Completed Step"
+        ) +
+        theme_minimal()
+      
+      # Scatter plot of age_range_numeric vs last_completed_step
+      ggplot(master_data_all, aes(x = age_range_numeric, y = last_completed_step)) +
+        geom_point(alpha = 0.5) +
+        geom_smooth(method = "lm", color = "blue", se = FALSE) +
+        labs(
+          title = "Scatter Plot of Age Range vs Last Completed Step",
+          x = "Age Range (Numeric)",
+          y = "Last Completed Step"
+        ) +
+        theme_minimal()
